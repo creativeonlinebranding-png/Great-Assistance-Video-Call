@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>Great Assistance Video Call</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+html,
+body{
+
+margin:0;
+width:100%;
+height:100%;
+
+background:#000;
+
+color:#fff;
+
+font-family:Arial,sans-serif;
+
+overflow:hidden;
+
+}
+
+#remoteVideo{
+
+width:100%;
+height:100%;
+
+object-fit:cover;
+
+background:#111;
+
+}
+
+#localVideo{
+
+position:absolute;
+
+right:15px;
+top:15px;
+
+width:115px;
+height:165px;
+
+object-fit:cover;
+
+background:#222;
+
+border:2px solid #fff;
+
+border-radius:12px;
+
+z-index:5;
+
+}
+
+#info{
+
+position:absolute;
+
+top:15px;
+left:15px;
+
+z-index:10;
+
+background:rgba(0,0,0,.65);
+
+padding:12px 15px;
+
+border-radius:10px;
+
+}
+
+#name{
+
+font-size:18px;
+font-weight:bold;
+
+}
+
+#status{
+
+margin-top:4px;
+
+color:#ccc;
+
+font-size:13px;
+
+}
+
+#controls{
+
+position:absolute;
+
+bottom:30px;
+
+left:0;
+right:0;
+
+display:flex;
+
+justify-content:center;
+
+gap:15px;
+
+z-index:10;
+
+}
+
+.control{
+
+width:58px;
+height:58px;
+
+border:0;
+
+border-radius:50%;
+
+background:#333;
+
+color:white;
+
+font-size:20px;
+
+}
+
+.end{
+
+background:#e53935;
+
+}
+
+#message{
+
+position:absolute;
+
+inset:0;
+
+display:none;
+
+align-items:center;
+
+justify-content:center;
+
+text-align:center;
+
+padding:25px;
+
+background:#111b21;
+
+z-index:100;
+
+}
+
+.messageBox{
+
+max-width:400px;
+
+}
+
+.messageBox h2{
+
+font-size:25px;
+
+}
+
+.messageBox p{
+
+color:#aebac1;
+
+line-height:1.5;
+
+}
+
+#retryButton{
+
+padding:14px 25px;
+
+border:0;
+
+border-radius:10px;
+
+background:#25d366;
+
+color:#071b12;
+
+font-weight:bold;
+
+font-size:16px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<video
+id="remoteVideo"
+autoplay
+playsinline>
+</video>
+
+
+<video
+id="localVideo"
+autoplay
+playsinline
+muted>
+</video>
+
+
+<div id="info">
+
+<div id="name">
+
+Great Assistance
+
+</div>
+
+
+<div id="status">
+
+Starting camera...
+
+</div>
+
+</div>
+
+
+<div id="controls">
+
+
+<button
+id="muteButton"
+class="control">
+
+🎤
+
+</button>
+
+
+<button
+id="cameraButton"
+class="control">
+
+📷
+
+</button>
+
+
+<button
+id="endButton"
+class="control end">
+
+☎
+
+</button>
+
+
+</div>
+
+
+<div id="message">
+
+<div class="messageBox">
+
+<h2>
+📹 Great Assistance
+</h2>
+
+
+<p id="errorText">
+
+Camera and microphone could not be opened.
+
+</p>
+
+
+<button id="retryButton">
+
+TRY AGAIN
+
+</button>
+
+</div>
+
+</div>
+
+
+
+<script type="module">
+
+
+import {
+
+initializeApp
+
+}
+
+from
+
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+
+import {
+
+getAuth,
+
+onAuthStateChanged
+
+}
+
+from
+
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+
+import {
+
+getDatabase,
+
+ref,
+
+get,
+
+set,
+
+push,
+
+remove,
+
+onValue
+
+}
+
+from
+
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+
+/* ======================================
+FIREBASE
+====================================== */
+
+
+const firebaseConfig={
+
+
+apiKey:
+
+"AIzaSyCrytf77WuZJthewnFLy5XL6i5Xh0vAW7o",
+
+
+authDomain:
+
+"great-assistance.firebaseapp.com",
+
+
+databaseURL:
+
+"https://great-assistance-default-rtdb.europe-west1.firebasedatabase.app",
+
+
+projectId:
+
+"great-assistance",
+
+
+storageBucket:
+
+"great-assistance.firebasestorage.app",
+
+
+messagingSenderId:
+
+"673899916289",
+
+
+appId:
+
+"1:673899916289:web:4c1f2b0845342309f62400"
+
+
+};
+
+
+
+const app=
+
+initializeApp(
+
+firebaseConfig
+
+);
+
+
+
+const auth=
+
+getAuth(app);
+
+
+
+const database=
+
+getDatabase(app);
+
+
+
+/* ======================================
+ELEMENTS
+====================================== */
+
+
+const remoteVideo=
+
+document.getElementById(
+
+"remoteVideo"
+
+);
+
+
+const localVideo=
+
+document.getElementById(
+
+"localVideo"
+
+);
+
+
+const statusText=
+
+document.getElementById(
+
+"status"
+
+);
+
+
+const nameText=
+
+document.getElementById(
+
+"name"
+
+);
+
+
+const message=
+
+document.getElementById(
+
+"message"
+
+);
+
+
+const errorText=
+
+document.getElementById(
+
+"errorText"
+
+);
+
+
+
+/* ======================================
+VARIABLES
+====================================== */
+
+
+let currentUser=null;
+
+let targetUserId=null;
+
+let peerConnection=null;
+
+let localStream=null;
+
+let callId=null;
+
+
+
+/* ======================================
+GET USER FROM URL
+====================================== */
+
+
+const params=
+
+new URLSearchParams(
+
+window.location.search
+
+);
+
+
+targetUserId=
+
+params.get(
+
+"user"
+
+);
+
+
+
+/* ======================================
+RTC
+====================================== */
+
+
+const rtcConfig={
+
+
+iceServers:[
+
+{
+
+urls:
+
+"stun:stun.l.google.com:19302"
+
+},
+
+{
+
+urls:
+
+"stun:stun1.l.google.com:19302"
+
+}
+
+]
+
+};
+
+
+
+/* ======================================
+CAMERA
+====================================== */
+
+
+async function
+getCameraAndMicrophone(){
+
+
+if(!navigator.mediaDevices){
+
+throw new Error(
+
+"Camera API is unavailable."
+
+);
+
+}
+
+
+if(!navigator.mediaDevices.getUserMedia){
+
+throw new Error(
+
+"getUserMedia is unavailable."
+
+);
+
+}
+
+
+
+const stream=
+
+await navigator.mediaDevices.getUserMedia({
+
+video:true,
+
+audio:true
+
+});
+
+
+return stream;
+
+}
+
+
+
+/* ======================================
+AUTH
+====================================== */
+
+
+onAuthStateChanged(
+
+auth,
+
+async user=>{
+
+
+if(!user){
+
+statusText.textContent=
+
+"Please log in first.";
+
+return;
+
+}
+
+
+currentUser=user;
+
+
+
+if(!targetUserId){
+
+statusText.textContent=
+
+"No user selected.";
+
+return;
+
+}
+
+
+
+await startCamera();
+
+
+});
+
+
+
+/* ======================================
+START CAMERA
+====================================== */
+
+
+async function
+startCamera(){
+
+
+try{
+
+
+statusText.textContent=
+
+"Requesting camera permission...";
+
+
+
+localStream=
+
+await getCameraAndMicrophone();
+
+
+
+localVideo.srcObject=
+
+localStream;
+
+
+
+statusText.textContent=
+
+"Camera ready.";
+
+
+
+
+
+await getTargetUser();
+
+
+}
+
+catch(error){
+
+
+console.error(
+
+"Camera error:",
+
+error
+
+);
+
+
+
+errorText.textContent=
+
+error.name+
+
+" — "+
+
+error.message;
+
+
+
+message.style.display=
+
+"flex";
+
+
+statusText.textContent=
+
+"Camera permission denied.";
+
+}
+
+}
+
+
+
+/* ======================================
+TARGET USER
+====================================== */
+
+
+async function
+getTargetUser(){
+
+
+try{
+
+
+const snapshot=
+
+await get(
+
+ref(
+
+database,
+
+"users/"+
+targetUserId
+
+)
+
+);
+
+
+const user=
+
+snapshot.val();
+
+
+if(!user){
+
+statusText.textContent=
+
+"User not found.";
+
+return;
+
+}
+
+
+
+nameText.textContent=
+
+user.name||
+
+"Great Assistance User";
+
+
+
+statusText.textContent=
+
+"Starting call...";
+
+
+
+await createCall();
+
+
+}
+
+catch(error){
+
+console.error(error);
+
+statusText.textContent=
+
+"Unable to find user.";
+
+}
+
+}
+
+
+
+/* ======================================
+CREATE CALL
+====================================== */
+
+
+async function
+createCall(){
+
+
+peerConnection=
+
+new RTCPeerConnection(
+
+rtcConfig
+
+);
+
+
+
+localStream
+
+.getTracks()
+
+.forEach(track=>{
+
+peerConnection.addTrack(
+
+track,
+
+localStream
+
+);
+
+});
+
+
+
+peerConnection.ontrack=
+
+event=>{
+
+
+if(
+
+event.streams&&
+
+event.streams[0]
+
+){
+
+remoteVideo.srcObject=
+
+event.streams[0];
+
+
+statusText.textContent=
+
+"Connected";
+
+}
+
+};
+
+
+
+const callRef=
+
+push(
+
+ref(
+
+database,
+
+"calls"
+
+)
+
+);
+
+
+
+callId=
+
+callRef.key;
+
+
+
+peerConnection.onicecandidate=
+
+async event=>{
+
+
+if(!event.candidate)
+
+return;
+
+
+
+const candidateRef=
+
+push(
+
+ref(
+
+database,
+
+"calls/"+
+
+callId+
+
+"/callerCandidates"
+
+)
+
+);
+
+
+
+await set(
+
+candidateRef,
+
+event.candidate.toJSON()
+
+);
+
+};
+
+
+
+const offer=
+
+await peerConnection.createOffer();
+
+
+
+await peerConnection.setLocalDescription(
+
+offer
+
+);
+
+
+
+await set(
+
+callRef,
+
+{
+
+caller:
+
+currentUser.uid,
+
+callee:
+
+targetUserId,
+
+status:
+
+"ringing",
+
+offer:{
+
+type:
+
+offer.type,
+
+sdp:
+
+offer.sdp
+
+},
+
+createdAt:
+
+Date.now()
+
+}
+
+);
+
+
+
+statusText.textContent=
+
+"Calling...";
+
+
+listenForAnswer();
+
+}
+
+
+
+/* ======================================
+ANSWER
+====================================== */
+
+
+function
+listenForAnswer(){
+
+
+onValue(
+
+ref(
+
+database,
+
+"calls/"+
+
+callId
+
+),
+
+async snapshot=>{
+
+
+const call=
+
+snapshot.val();
+
+
+
+if(
+
+call&&
+
+call.answer&&
+
+peerConnection&&
+
+!peerConnection.currentRemoteDescription
+
+){
+
+
+await peerConnection.setRemoteDescription(
+
+new RTCSessionDescription(
+
+call.answer
+
+)
+
+);
+
+
+
+statusText.textContent=
+
+"Connected";
+
+
+
+listenForCandidates(
+
+"calleeCandidates"
+
+);
+
+}
+
+});
+
+}
+
+
+
+/* ======================================
+ICE
+====================================== */
+
+
+function
+listenForCandidates(folder){
+
+
+onValue(
+
+ref(
+
+database,
+
+"calls/"+
+
+callId+
+
+"/"+
+
+folder
+
+),
+
+async snapshot=>{
+
+
+const candidates=
+
+snapshot.val()||{};
+
+
+
+for(
+
+const key in candidates
+
+){
+
+
+try{
+
+
+await peerConnection.addIceCandidate(
+
+new RTCIceCandidate(
+
+candidates[key]
+
+)
+
+);
+
+
+}
+
+catch(error){
+
+console.error(
+
+"ICE error:",
+
+error
+
+);
+
+}
+
+}
+
+});
+
+}
+
+
+
+/* ======================================
+MUTE
+====================================== */
+
+
+document
+.getElementById(
+"muteButton"
+)
+.onclick=()=>{
+
+
+if(!localStream)
+
+return;
+
+
+
+const track=
+
+localStream
+
+.getAudioTracks()[0];
+
+
+
+if(!track)
+
+return;
+
+
+
+track.enabled=
+
+!track.enabled;
+
+
+
+document
+
+.getElementById(
+"muteButton"
+)
+
+.textContent=
+
+track.enabled
+
+? "🎤"
+
+: "🔇";
+
+};
+
+
+
+/* ======================================
+CAMERA
+====================================== */
+
+
+document
+.getElementById(
+"cameraButton"
+)
+.onclick=()=>{
+
+
+if(!localStream)
+
+return;
+
+
+
+const track=
+
+localStream
+
+.getVideoTracks()[0];
+
+
+
+if(!track)
+
+return;
+
+
+
+track.enabled=
+
+!track.enabled;
+
+
+
+document
+
+.getElementById(
+"cameraButton"
+)
+
+.textContent=
+
+track.enabled
+
+? "📷"
+
+: "🚫";
+
+};
+
+
+
+/* ======================================
+END CALL
+====================================== */
+
+
+async function
+endCall(){
+
+
+if(callId){
+
+
+try{
+
+
+await remove(
+
+ref(
+
+database,
+
+"calls/"+
+
+callId
+
+)
+
+);
+
+
+}
+
+catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+
+if(peerConnection){
+
+peerConnection.close();
+
+peerConnection=null;
+
+}
+
+
+
+if(localStream){
+
+localStream
+
+.getTracks()
+
+.forEach(track=>{
+
+track.stop();
+
+});
+
+
+
+localStream=null;
+
+}
+
+
+
+remoteVideo.srcObject=null;
+
+localVideo.srcObject=null;
+
+callId=null;
+
+}
+
+
+
+document
+
+.getElementById(
+"endButton"
+)
+
+.onclick=async()=>{
+
+
+await endCall();
+
+
+window.history.back();
+
+};
+
+
+
+/* ======================================
+RETRY
+====================================== */
+
+
+document
+
+.getElementById(
+"retryButton"
+)
+
+.onclick=()=>{
+
+
+message.style.display=
+
+"none";
+
+
+startCamera();
+
+};
+
+
+</script>
+
+</body>
+</html>
