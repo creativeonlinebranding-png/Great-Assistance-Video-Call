@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Great Assistance Video Call</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+
+    background: #071b12;
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    min-height: 100vh;
+
+}
+
+
+.header {
+
+    height: 65px;
+
+    background: #202c33;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 18px;
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+}
+
+
+.header span {
+
+    color: #25d366;
+
+}
+
+
+.container {
+
+    width: 100%;
+
+    max-width: 1000px;
+
+    margin: auto;
+
+    padding: 15px;
+
+}
+
+
+.status {
+
+    text-align: center;
+
+    color: #aebac1;
+
+    padding: 12px;
+
+}
+
+
+.videoArea {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 70vh;
+
+    min-height: 400px;
+
+    background: #000;
+
+    border-radius: 15px;
+
+    overflow: hidden;
+
+}
+
+
+#remoteVideo {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    background: #000;
+
+}
+
+
+#localVideo {
+
+    position: absolute;
+
+    right: 15px;
+
+    bottom: 15px;
+
+    width: 180px;
+
+    height: 130px;
+
+    object-fit: cover;
+
+    background: #111;
+
+    border: 2px solid #25d366;
+
+    border-radius: 12px;
+
+    z-index: 5;
+
+}
+
+
+.controls {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    padding: 20px;
+
+}
+
+
+.controlButton {
+
+    border: none;
+
+    width: 55px;
+
+    height: 55px;
+
+    border-radius: 50%;
+
+    background: #2a3942;
+
+    color: white;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+}
+
+
+.endButton {
+
+    background: #e53935;
+
+}
+
+
+.acceptButton {
+
+    background: #25d366;
+
+    color: #071b12;
+
+    font-weight: bold;
+
+}
+
+
+#incomingCall {
+
+    display: none;
+
+    position: fixed;
+
+    left: 20px;
+
+    right: 20px;
+
+    bottom: 20px;
+
+    max-width: 450px;
+
+    margin: auto;
+
+    background: #202c33;
+
+    padding: 22px;
+
+    border-radius: 18px;
+
+    text-align: center;
+
+    z-index: 100;
+
+    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+
+}
+
+
+#incomingCaller {
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+    margin-bottom: 8px;
+
+}
+
+
+.incomingButtons {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 18px;
+
+}
+
+
+.incomingButtons button {
+
+    flex: 1;
+
+    padding: 14px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+}
+
+
+#acceptCall {
+
+    background: #25d366;
+
+    color: #071b12;
+
+}
+
+
+#declineCall {
+
+    background: #e53935;
+
+    color: white;
+
+}
+
+
+.message {
+
+    text-align: center;
+
+    padding: 20px;
+
+    color: #8696a0;
+
+}
+
+
+@media(max-width:600px) {
+
+    .videoArea {
+
+        height: 65vh;
+
+        min-height: 350px;
+
+    }
+
+
+    #localVideo {
+
+        width: 120px;
+
+        height: 90px;
+
+        right: 10px;
+
+        bottom: 10px;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="header">
+
+    Great <span>Assistance</span>
+
+</div>
+
+
+<div class="container">
+
+    <div
+        id="status"
+        class="status">
+
+        Connecting...
+
+    </div>
+
+
+    <div class="videoArea">
+
+        <video
+            id="remoteVideo"
+            autoplay
+            playsinline>
+        </video>
+
+
+        <video
+            id="localVideo"
+            autoplay
+            muted
+            playsinline>
+        </video>
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            id="muteButton"
+            class="controlButton">
+
+            🎤
+
+        </button>
+
+
+        <button
+            id="cameraButton"
+            class="controlButton">
+
+            📹
+
+        </button>
+
+
+        <button
+            id="endButton"
+            class="controlButton endButton">
+
+            ☎
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================
+     INCOMING CALL
+========================== -->
+
+<div id="incomingCall">
+
+    <div id="incomingCaller">
+
+        Incoming Video Call
+
+    </div>
+
+
+    <div>
+
+        Someone is calling you
+
+    </div>
+
+
+    <div class="incomingButtons">
+
+        <button id="declineCall">
+
+            Decline
+
+        </button>
+
+
+        <button id="acceptCall">
+
+            Accept
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<script type="module">
+
+
+/* ==========================================
+   FIREBASE
+========================================== */
+
+import {
+    initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+import {
+    getAuth,
+    onAuthStateChanged
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+import {
+    getDatabase,
+    ref,
+    set,
+    push,
+    onValue,
+    update,
+    remove
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+/* ==========================================
+   FIREBASE CONFIG
+========================================== */
+
+const firebaseConfig = {
+
+    apiKey:
+    "AIzaSyCrytf77WuZJthewnFLy5XL6iXh0vAW7o",
+
+    authDomain:
+    "great-assistance.firebaseapp.com",
+
+    databaseURL:
+    "https://great-assistance-default-rtdb.europe-west1.firebasedatabase.app",
+
+    projectId:
+    "great-assistance",
+
+    storageBucket:
+    "great-assistance.firebasestorage.app",
+
+    messagingSenderId:
+    "673899916289",
+
+    appId:
+    "1:673899916289:web:4c1f2b0845342309f62400"
+
+};
+
+
+/* ==========================================
+   INITIALIZE
+========================================== */
+
+const app =
+initializeApp(firebaseConfig);
+
+
+const auth =
+getAuth(app);
+
+
+const database =
+getDatabase(app);
+
+
+/* ==========================================
+   ELEMENTS
+========================================== */
+
+const statusText =
+document.getElementById("status");
+
+
+const localVideo =
+document.getElementById("localVideo");
+
+
+const remoteVideo =
+document.getElementById("remoteVideo");
+
+
+const incomingCall =
+document.getElementById("incomingCall");
+
+
+const incomingCaller =
+document.getElementById("incomingCaller");
+
+
+/* ==========================================
+   VARIABLES
+========================================== */
+
+let currentUser = null;
+
+let targetUserId = null;
+
+let currentCallId = null;
+
+let currentCall = null;
+
+let localStream = null;
+
+let remoteStream = null;
+
+let callerCandidatesListener = null;
+
+let calleeCandidatesListener = null;
+
+
+/* ==========================================
+   WEBRTC CONFIG
+========================================== */
+
+const rtcConfig = {
+
+    iceServers: [
+
+        {
+            urls:
+            "stun:stun.l.google.com:19302"
+        },
+
+        {
+            urls:
+            "stun:stun1.l.google.com:19302"
+        }
+
+    ]
+
+};
+
+
+/* ==========================================
+   URL USER
+========================================== */
+
+const params =
+new URLSearchParams(
+    window.location.search
+);
+
+
+/*
+The Chat page sends:
+
+?user=TARGET_UID
+*/
+
+targetUserId =
+params.get("user");
+
+
+console.log(
+    "Target user:",
+    targetUserId
+);
+
+
+/* ==========================================
+   AUTH
+========================================== */
+
+onAuthStateChanged(
+    auth,
+    async user => {
+
+        if (!user) {
+
+            statusText.textContent =
+            "Please log in through Great Assistance Chat first.";
+
+            return;
+
+        }
+
+
+        currentUser =
+        user;
+
+
+        console.log(
+            "Current user:",
+            currentUser.uid
+        );
+
+
+        await startCamera();
+
+
+        /*
+        Start watching for incoming calls.
+        */
+
+        listenForIncomingCalls();
+
+
+        /*
+        If ?user= exists, this phone was
+        opened from the Chat video button.
+        */
+
+        if (targetUserId) {
+
+            statusText.textContent =
+            "Ready to call.";
+
+        }
+
+        else {
+
+            statusText.textContent =
+            "Waiting for call...";
+
+        }
+
+    }
+);
+
+
+/* ==========================================
+   CAMERA
+========================================== */
+
+async function startCamera() {
+
+    try {
+
+        statusText.textContent =
+        "Requesting camera permission...";
+
+
+        localStream =
+        await navigator.mediaDevices.getUserMedia({
+
+            video: true,
+
+            audio: true
+
+        });
+
+
+        localVideo.srcObject =
+        localStream;
+
+
+        statusText.textContent =
+        "Camera is ready.";
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Camera error:",
+            error
+        );
+
+
+        statusText.textContent =
+        "Camera Error: " +
+        error.message;
+
+    }
+
+}
+
+
+/* ==========================================
+   CREATE PEER CONNECTION
+========================================== */
+
+function createPeerConnection() {
+
+    const pc =
+    new RTCPeerConnection(
+        rtcConfig
+    );
+
+
+    /*
+    Add local camera/microphone.
+    */
+
+    if (localStream) {
+
+        localStream
+        .getTracks()
+        .forEach(
+            track => {
+
+                pc.addTrack(
+                    track,
+                    localStream
+                );
+
+            }
+        );
+
+    }
+
+
+    /*
+    Receive remote video.
+    */
+
+    remoteStream =
+    new MediaStream();
+
+
+    remoteVideo.srcObject =
+    remoteStream;
+
+
+    pc.ontrack =
+    event => {
+
+        console.log(
+            "Remote track received"
+        );
+
+
+        event.streams[0]
+        .getTracks()
+        .forEach(
+            track => {
+
+                remoteStream.addTrack(
+                    track
+                );
+
+            }
+        );
+
+    };
+
+
+    /*
+    ICE candidates.
+    */
+
+    pc.onicecandidate =
+    event => {
+
+        if (
+            !event.candidate ||
+            !currentCallId
+        ) {
+
+            return;
+
+        }
+
+
+        const candidateRef =
+        push(
+
+            ref(
+                database,
+                "calls/" +
+                currentCallId +
+                "/callerCandidates"
+            )
+
+        );
+
+
+        set(
+            candidateRef,
+            event.candidate.toJSON()
+        );
+
+    };
+
+
+    return pc;
+
+}
+
+
+/* ==========================================
+   START CALL
+========================================== */
+
+async function startCall() {
+
+    if (!currentUser) {
+
+        alert(
+            "You are not logged in."
+        );
+
+        return;
+
+    }
+
+
+    if (!targetUserId) {
+
+        alert(
+            "No user selected."
+        );
+
+        return;
+
+    }
+
+
+    if (!localStream) {
+
+        await startCamera();
+
+    }
+
+
+    statusText.textContent =
+    "Calling...";
+
+
+    currentCall =
+    createPeerConnection();
+
+
+    /*
+    Create Firebase call.
+    */
+
+    const callRef =
+    push(
+        ref(
+            database,
+            "calls"
+        )
+    );
+
+
+    currentCallId =
+    callRef.key;
+
+
+    /*
+    Add ICE candidates to the
+    caller's candidate collection.
+    */
+
+    currentCall.onicecandidate =
+    event => {
+
+        if (
+            !event.candidate ||
+            !currentCallId
+        ) {
+
+            return;
+
+        }
+
+
+        const candidateRef =
+        push(
+
+            ref(
+                database,
+                "calls/" +
+                currentCallId +
+                "/callerCandidates"
+            )
+
+        );
+
+
+        set(
+            candidateRef,
+            event.candidate.toJSON()
+        );
+
+    };
+
+
+    /*
+    Create WebRTC offer.
+    */
+
+    const offer =
+    await currentCall.createOffer();
+
+
+    await currentCall.setLocalDescription(
+        offer
+    );
+
+
+    /*
+    Save call in Firebase.
+    */
+
+    await set(
+
+        callRef,
+
+        {
+
+            caller:
+            currentUser.uid,
+
+            callee:
+            targetUserId,
+
+            callerName:
+            currentUser.displayName ||
+            "Great Assistance User",
+
+            offer: {
+
+                type:
+                offer.type,
+
+                sdp:
+                offer.sdp
+
+            },
+
+            status:
+            "ringing",
+
+            createdAt:
+            Date.now()
+
+        }
+
+    );
+
+
+    console.log(
+        "Call created:",
+        currentCallId
+    );
+
+
+    /*
+    Wait for receiver's answer.
+    */
+
+    onValue(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId +
+            "/answer"
+        ),
+
+        async snapshot => {
+
+            const answer =
+            snapshot.val();
+
+
+            if (
+                answer &&
+                !currentCall.currentRemoteDescription
+            ) {
+
+                console.log(
+                    "Answer received"
+                );
+
+
+                await currentCall.setRemoteDescription(
+                    new RTCSessionDescription(
+                        answer
+                    )
+                );
+
+
+                statusText.textContent =
+                "Connected.";
+
+            }
+
+        }
+
+    );
+
+
+    /*
+    Watch call status.
+    */
+
+    onValue(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId +
+            "/status"
+        ),
+
+        snapshot => {
+
+            const status =
+            snapshot.val();
+
+
+            if (status === "accepted") {
+
+                statusText.textContent =
+                "Connecting...";
+
+            }
+
+
+            if (status === "declined") {
+
+                statusText.textContent =
+                "Call declined.";
+
+            }
+
+
+            if (status === "ended") {
+
+                endCall(false);
+
+            }
+
+        }
+
+    );
+
+
+    /*
+    Listen for receiver ICE candidates.
+    */
+
+    onValue(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId +
+            "/calleeCandidates"
+        ),
+
+        snapshot => {
+
+            const candidates =
+            snapshot.val();
+
+
+            if (!candidates) {
+
+                return;
+
+            }
+
+
+            Object.values(
+                candidates
+            )
+            .forEach(
+                async candidate => {
+
+                    try {
+
+                        await currentCall.addIceCandidate(
+                            new RTCIceCandidate(
+                                candidate
+                            )
+                        );
+
+                    }
+
+                    catch(error) {
+
+                        console.error(
+                            "ICE error:",
+                            error
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+    );
+
+}
+
+
+/* ==========================================
+   INCOMING CALL LISTENER
+========================================== */
+
+function listenForIncomingCalls() {
+
+    if (!currentUser) {
+
+        return;
+
+    }
+
+
+    const callsRef =
+    ref(
+        database,
+        "calls"
+    );
+
+
+    onValue(
+
+        callsRef,
+
+        snapshot => {
+
+            const calls =
+            snapshot.val() || {};
+
+
+            Object.entries(
+                calls
+            )
+            .forEach(
+                ([callId, call]) => {
+
+                    /*
+                    Only receive calls where
+                    THIS user is the callee.
+                    */
+
+                    if (
+                        call.callee !==
+                        currentUser.uid
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        call.status !==
+                        "ringing"
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    /*
+                    Ignore our own current call.
+                    */
+
+                    if (
+                        callId ===
+                        currentCallId
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    /*
+                    Show incoming call.
+                    */
+
+                    currentCallId =
+                    callId;
+
+
+                    incomingCaller.textContent =
+                    "📞 " +
+                    (
+                        call.callerName ||
+                        "Great Assistance User"
+                    ) +
+                    " is calling you";
+
+
+                    incomingCall.style.display =
+                    "block";
+
+
+                    console.log(
+                        "Incoming call:",
+                        callId
+                    );
+
+                }
+            );
+
+        }
+
+    );
+
+}
+
+
+/* ==========================================
+   ACCEPT CALL
+========================================== */
+
+document
+.getElementById("acceptCall")
+.onclick =
+async () => {
+
+    incomingCall.style.display =
+    "none";
+
+
+    if (!currentCallId) {
+
+        return;
+
+    }
+
+
+    const callSnapshot =
+    await new Promise(
+        resolve => {
+
+            onValue(
+
+                ref(
+                    database,
+                    "calls/" +
+                    currentCallId
+                ),
+
+                resolve,
+
+                {
+                    onlyOnce: true
+                }
+
+            );
+
+        }
+    );
+
+
+    const call =
+    callSnapshot.val();
+
+
+    if (!call) {
+
+        statusText.textContent =
+        "Call no longer exists.";
+
+        return;
+
+    }
+
+
+    statusText.textContent =
+    "Answering call...";
+
+
+    currentCall =
+    createPeerConnection();
+
+
+    /*
+    Receiver must place ICE
+    candidates under calleeCandidates.
+    */
+
+    currentCall.onicecandidate =
+    event => {
+
+        if (
+            !event.candidate ||
+            !currentCallId
+        ) {
+
+            return;
+
+        }
+
+
+        const candidateRef =
+        push(
+
+            ref(
+                database,
+                "calls/" +
+                currentCallId +
+                "/calleeCandidates"
+            )
+
+        );
+
+
+        set(
+            candidateRef,
+            event.candidate.toJSON()
+        );
+
+    };
+
+
+    /*
+    Set caller offer.
+    */
+
+    await currentCall.setRemoteDescription(
+
+        new RTCSessionDescription(
+            call.offer
+        )
+
+    );
+
+
+    /*
+    Create answer.
+    */
+
+    const answer =
+    await currentCall.createAnswer();
+
+
+    await currentCall.setLocalDescription(
+        answer
+    );
+
+
+    /*
+    Save answer.
+    */
+
+    await update(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId
+        ),
+
+        {
+
+            answer: {
+
+                type:
+                answer.type,
+
+                sdp:
+                answer.sdp
+
+            },
+
+            status:
+            "accepted"
+
+        }
+
+    );
+
+
+    /*
+    Listen for caller ICE candidates.
+    */
+
+    onValue(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId +
+            "/callerCandidates"
+        ),
+
+        snapshot => {
+
+            const candidates =
+            snapshot.val();
+
+
+            if (!candidates) {
+
+                return;
+
+            }
+
+
+            Object.values(
+                candidates
+            )
+            .forEach(
+                async candidate => {
+
+                    try {
+
+                        await currentCall.addIceCandidate(
+
+                            new RTCIceCandidate(
+                                candidate
+                            )
+
+                        );
+
+                    }
+
+                    catch(error) {
+
+                        console.error(
+                            "ICE error:",
+                            error
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+    );
+
+
+    statusText.textContent =
+    "Connected.";
+
+};
+
+
+/* ==========================================
+   DECLINE CALL
+========================================== */
+
+document
+.getElementById("declineCall")
+.onclick =
+async () => {
+
+    incomingCall.style.display =
+    "none";
+
+
+    if (!currentCallId) {
+
+        return;
+
+    }
+
+
+    await update(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId
+        ),
+
+        {
+
+            status:
+            "declined"
+
+        }
+
+    );
+
+
+    currentCallId =
+    null;
+
+
+    statusText.textContent =
+    "Call declined.";
+
+};
+
+
+/* ==========================================
+   MUTE
+========================================== */
+
+document
+.getElementById("muteButton")
+.onclick =
+() => {
+
+    if (!localStream) {
+
+        return;
+
+    }
+
+
+    const audioTracks =
+    localStream.getAudioTracks();
+
+
+    audioTracks.forEach(
+        track => {
+
+            track.enabled =
+            !track.enabled;
+
+        }
+    );
+
+
+    document
+    .getElementById(
+        "muteButton"
+    )
+    .textContent =
+    audioTracks[0]?.enabled
+    ? "🎤"
+    : "🔇";
+
+};
+
+
+/* ==========================================
+   CAMERA
+========================================== */
+
+document
+.getElementById("cameraButton")
+.onclick =
+() => {
+
+    if (!localStream) {
+
+        return;
+
+    }
+
+
+    const videoTracks =
+    localStream.getVideoTracks();
+
+
+    videoTracks.forEach(
+        track => {
+
+            track.enabled =
+            !track.enabled;
+
+        }
+    );
+
+
+    document
+    .getElementById(
+        "cameraButton"
+    )
+    .textContent =
+    videoTracks[0]?.enabled
+    ? "📹"
+    : "🚫";
+
+};
+
+
+/* ==========================================
+   END CALL
+========================================== */
+
+document
+.getElementById("endButton")
+.onclick =
+() => {
+
+    endCall(true);
+
+};
+
+
+async function endCall(updateFirebase) {
+
+    statusText.textContent =
+    "Call ended.";
+
+
+    if (currentCall) {
+
+        currentCall.close();
+
+        currentCall =
+        null;
+
+    }
+
+
+    if (localStream) {
+
+        localStream
+        .getTracks()
+        .forEach(
+            track => {
+
+                track.stop();
+
+            }
+        );
+
+    }
+
+
+    localVideo.srcObject =
+    null;
+
+
+    remoteVideo.srcObject =
+    null;
+
+
+    if (
+        updateFirebase &&
+        currentCallId
+    ) {
+
+        try {
+
+            await update(
+
+                ref(
+                    database,
+                    "calls/" +
+                    currentCallId
+                ),
+
+                {
+
+                    status:
+                    "ended"
+
+                }
+
+            );
+
+        }
+
+        catch(error) {
+
+            console.error(
+                error
+            );
+
+        }
+
+    }
+
+
+    currentCallId =
+    null;
+
+}
+
+
+/* ==========================================
+   AUTOMATIC CALL START
+========================================== */
+
+/*
+If this page was opened with:
+
+?user=TARGET_UID
+
+then this phone is the caller.
+
+We wait for authentication and camera
+to be ready before starting.
+*/
+
+let callStarted = false;
+
+
+setTimeout(
+    () => {
+
+        if (
+            currentUser &&
+            targetUserId &&
+            !callStarted
+        ) {
+
+            callStarted =
+            true;
+
+            startCall();
+
+        }
+
+    },
+    2500
+);
+
+
+</script>
+
+</body>
+
+</html>
