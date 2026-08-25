@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Great Assistance Video Call</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+#remoteVideo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #111;
+}
+
+#localVideo {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 125px;
+    height: 175px;
+    object-fit: cover;
+    background: #222;
+    border: 2px solid white;
+    border-radius: 12px;
+    z-index: 10;
+}
+
+#info {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 20;
+    background: rgba(0,0,0,.7);
+    padding: 12px 16px;
+    border-radius: 10px;
+}
+
+#name {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#status {
+    margin-top: 4px;
+    color: #ccc;
+    font-size: 13px;
+}
+
+#controls {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    z-index: 30;
+}
+
+.control {
+    width: 58px;
+    height: 58px;
+    border: none;
+    border-radius: 50%;
+    background: #333;
+    color: white;
+    font-size: 21px;
+}
+
+.end {
+    background: #e53935;
+}
+
+#startScreen,
+#incomingScreen,
+#errorScreen {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: #111b21;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 25px;
+}
+
+.box {
+    width: 90%;
+    max-width: 400px;
+}
+
+.box h1 {
+    color: #25d366;
+}
+
+.box p {
+    color: #aebac1;
+    line-height: 1.5;
+}
+
+.primaryButton {
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    background: #25d366;
+    color: #071b12;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #071b12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: bold;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 35px;
+    margin-top: 30px;
+}
+
+.answer,
+.decline {
+    width: 65px;
+    height: 65px;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 25px;
+}
+
+.answer {
+    background: #25d366;
+}
+
+.decline {
+    background: #e53935;
+}
+</style>
+</head>
+
+<body>
+
+<video id="remoteVideo" autoplay playsinline></video>
+
+<video id="localVideo" autoplay playsinline muted></video>
+
+<div id="info">
+    <div id="name">Great Assistance</div>
+    <div id="status">Starting...</div>
+</div>
+
+<div id="controls">
+
+    <button id="muteButton" class="control">
+        🎤
+    </button>
+
+    <button id="cameraButton" class="control">
+        📷
+    </button>
+
+    <button id="endButton" class="control end">
+        ☎
+    </button>
+
+</div>
+
+
+<!-- START CALL -->
+
+<div id="startScreen">
+
+    <div class="box">
+
+        <h1>
+            Great Assistance
+        </h1>
+
+        <p id="startText">
+            Your camera is ready.
+        </p>
+
+        <button id="startButton" class="primaryButton">
+            Start Video Call
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- INCOMING CALL -->
+
+<div id="incomingScreen">
+
+    <div class="box">
+
+        <div id="incomingAvatar" class="avatar">
+            ?
+        </div>
+
+        <h1>
+            Incoming Video Call
+        </h1>
+
+        <p id="incomingName">
+            Someone is calling you
+        </p>
+
+        <div class="actions">
+
+            <button id="declineButton" class="decline">
+                ☎
+            </button>
+
+            <button id="answerButton" class="answer">
+                📹
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ERROR -->
+
+<div id="errorScreen">
+
+    <div class="box">
+
+        <h1 style="color:#ff5555;">
+            Camera Error
+        </h1>
+
+        <p id="errorText">
+            Camera and microphone could not be opened.
+        </p>
+
+        <button id="retryButton" class="primaryButton">
+            TRY AGAIN
+        </button>
+
+    </div>
+
+</div>
+
+
+<script type="module">
+
+import {
+    initializeApp
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+    getAuth,
+    onAuthStateChanged
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+    getDatabase,
+    ref,
+    get,
+    set,
+    push,
+    remove,
+    onValue,
+    onChildAdded
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+/* ==============================
+   FIREBASE CONFIG
+============================== */
+
+const firebaseConfig = {
+
+    apiKey:
+    "AIzaSyCrytf77WuZJthewnFLy5XL6i5Xh0vAW7o",
+
+    authDomain:
+    "great-assistance.firebaseapp.com",
+
+    databaseURL:
+    "https://great-assistance-default-rtdb.europe-west1.firebasedatabase.app",
+
+    projectId:
+    "great-assistance",
+
+    storageBucket:
+    "great-assistance.firebasestorage.app",
+
+    messagingSenderId:
+    "673899916289",
+
+    appId:
+    "1:673899916289:web:4c1f2b0845342309f62400"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const database = getDatabase(app);
+
+
+/* ==============================
+   VARIABLES
+============================== */
+
+let currentUser = null;
+
+let targetUserId = null;
+
+let localStream = null;
+
+let peerConnection = null;
+
+let currentCallId = null;
+
+let currentCall = null;
+
+let incomingListenerStarted = false;
+
+
+/* ==============================
+   URL
+============================== */
+
+const urlParams =
+new URLSearchParams(
+    window.location.search
+);
+
+targetUserId =
+urlParams.get("user");
+
+
+/* ==============================
+   WEBRTC
+============================== */
+
+const rtcConfiguration = {
+
+    iceServers: [
+
+        {
+            urls:
+            "stun:stun.l.google.com:19302"
+        },
+
+        {
+            urls:
+            "stun:stun1.l.google.com:19302"
+        }
+
+    ]
+
+};
+
+
+/* ==============================
+   ELEMENTS
+============================== */
+
+const localVideo =
+document.getElementById("localVideo");
+
+const remoteVideo =
+document.getElementById("remoteVideo");
+
+const status =
+document.getElementById("status");
+
+const name =
+document.getElementById("name");
+
+const startScreen =
+document.getElementById("startScreen");
+
+const incomingScreen =
+document.getElementById("incomingScreen");
+
+const errorScreen =
+document.getElementById("errorScreen");
+
+
+/* ==============================
+   AUTH
+============================== */
+
+onAuthStateChanged(
+    auth,
+    async user => {
+
+        if (!user) {
+
+            status.textContent =
+            "Not logged in";
+
+            startScreen.style.display =
+            "flex";
+
+            document.getElementById(
+                "startText"
+            ).textContent =
+            "Please log into Great Assistance first.";
+
+            document.getElementById(
+                "startButton"
+            ).style.display =
+            "none";
+
+            return;
+        }
+
+
+        currentUser = user;
+
+
+        console.log(
+            "Logged in UID:",
+            currentUser.uid
+        );
+
+
+        await loadUser();
+
+
+        await startCamera();
+
+
+        if (targetUserId) {
+
+            /*
+            This is the CALLER.
+            */
+
+            startScreen.style.display =
+            "flex";
+
+            document.getElementById(
+                "startText"
+            ).textContent =
+            "Camera is ready. Tap Start Video Call.";
+
+            status.textContent =
+            "Camera ready.";
+
+        }
+
+        else {
+
+            /*
+            This is the RECEIVER.
+            */
+
+            startScreen.style.display =
+            "none";
+
+            status.textContent =
+            "Waiting for incoming call...";
+
+            listenForIncomingCalls();
+
+        }
+
+    }
+);
+
+
+/* ==============================
+   LOAD USER
+============================== */
+
+async function loadUser() {
+
+    try {
+
+        const snapshot =
+        await get(
+
+            ref(
+                database,
+                "users/" +
+                currentUser.uid
+            )
+
+        );
+
+
+        const user =
+        snapshot.val();
+
+
+        if (user && user.name) {
+
+            name.textContent =
+            user.name;
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+/* ==============================
+   CAMERA
+============================== */
+
+async function startCamera() {
+
+    try {
+
+        status.textContent =
+        "Requesting camera permission...";
+
+
+        localStream =
+        await navigator.mediaDevices.getUserMedia({
+
+            video: true,
+
+            audio: true
+
+        });
+
+
+        localVideo.srcObject =
+        localStream;
+
+
+        status.textContent =
+        "Camera ready.";
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Camera error:",
+            error
+        );
+
+
+        document.getElementById(
+            "errorText"
+        ).textContent =
+        error.name +
+        " — " +
+        error.message;
+
+
+        errorScreen.style.display =
+        "flex";
+
+    }
+
+}
+
+
+/* ==============================
+   PEER CONNECTION
+============================== */
+
+function createPeerConnection() {
+
+    const pc =
+    new RTCPeerConnection(
+        rtcConfiguration
+    );
+
+
+    pc.ontrack =
+    event => {
+
+        if (
+            event.streams &&
+            event.streams[0]
+        ) {
+
+            remoteVideo.srcObject =
+            event.streams[0];
+
+            status.textContent =
+            "Connected 🎉";
+
+        }
+
+    };
+
+
+    pc.onconnectionstatechange =
+    () => {
+
+        console.log(
+            "WebRTC:",
+            pc.connectionState
+        );
+
+
+        if (
+            pc.connectionState ===
+            "connected"
+        ) {
+
+            status.textContent =
+            "Connected 🎉";
+
+        }
+
+
+        if (
+            pc.connectionState ===
+            "failed"
+        ) {
+
+            status.textContent =
+            "Connection failed.";
+
+        }
+
+
+        if (
+            pc.connectionState ===
+            "disconnected"
+        ) {
+
+            status.textContent =
+            "Call disconnected.";
+
+        }
+
+    };
+
+
+    return pc;
+
+}
+
+
+/* ==============================
+   CALLER
+============================== */
+
+document.getElementById(
+    "startButton"
+).onclick =
+async () => {
+
+    await createCall();
+
+};
+
+
+async function createCall() {
+
+    if (!currentUser || !targetUserId) {
+
+        return;
+
+    }
+
+
+    try {
+
+        startScreen.style.display =
+        "none";
+
+
+        status.textContent =
+        "Calling...";
+
+
+        const receiverSnapshot =
+        await get(
+
+            ref(
+                database,
+                "users/" +
+                targetUserId
+            )
+
+        );
+
+
+        const receiver =
+        receiverSnapshot.val();
+
+
+        if (!receiver) {
+
+            status.textContent =
+            "Receiver not found.";
+
+            return;
+
+        }
+
+
+        name.textContent =
+        receiver.name ||
+        "Great Assistance User";
+
+
+        peerConnection =
+        createPeerConnection();
+
+
+        localStream
+        .getTracks()
+        .forEach(
+            track => {
+
+                peerConnection.addTrack(
+                    track,
+                    localStream
+                );
+
+            }
+        );
+
+
+        const callRef =
+        push(
+            ref(
+                database,
+                "calls"
+            )
+        );
+
+
+        currentCallId =
+        callRef.key;
+
+
+        peerConnection.onicecandidate =
+        async event => {
+
+            if (!event.candidate) {
+
+                return;
+
+            }
+
+
+            await set(
+
+                push(
+
+                    ref(
+
+                        database,
+
+                        "calls/" +
+                        currentCallId +
+                        "/callerCandidates"
+
+                    )
+
+                ),
+
+                event.candidate.toJSON()
+
+            );
+
+        };
+
+
+        const offer =
+        await peerConnection.createOffer();
+
+
+        await peerConnection.setLocalDescription(
+            offer
+        );
+
+
+        await set(
+
+            callRef,
+
+            {
+
+                caller:
+                currentUser.uid,
+
+                callee:
+                targetUserId,
+
+                status:
+                "ringing",
+
+                offer: {
+
+                    type:
+                    offer.type,
+
+                    sdp:
+                    offer.sdp
+
+                },
+
+                createdAt:
+                Date.now()
+
+            }
+
+        );
+
+
+        console.log(
+            "CALL CREATED:",
+            currentCallId
+        );
+
+
+        listenForCallAnswer();
+
+
+        listenForRemoteCandidates(
+            "calleeCandidates"
+        );
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Create call error:",
+            error
+        );
+
+        status.textContent =
+        "Could not create call.";
+
+    }
+
+}
+
+
+/* ==============================
+   INCOMING CALL LISTENER
+============================== */
+
+function listenForIncomingCalls() {
+
+    if (
+        incomingListenerStarted ||
+        !currentUser
+    ) {
+
+        return;
+
+    }
+
+
+    incomingListenerStarted =
+    true;
+
+
+    const callsRef =
+    ref(
+        database,
+        "calls"
+    );
+
+
+    onChildAdded(
+
+        callsRef,
+
+        async snapshot => {
+
+            const call =
+            snapshot.val();
+
+
+            if (!call) {
+
+                return;
+
+            }
+
+
+            console.log(
+                "CALL FOUND:",
+                call
+            );
+
+
+            /*
+            IMPORTANT:
+            Only show calls where
+            the logged-in user is the callee.
+            */
+
+            if (
+                call.callee !==
+                currentUser.uid
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                call.status !==
+                "ringing"
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+            Ignore very old calls.
+            */
+
+            if (
+                Date.now() -
+                (call.createdAt || 0)
+                >
+                120000
+            ) {
+
+                return;
+
+            }
+
+
+            currentCallId =
+            snapshot.key;
+
+            currentCall =
+            call;
+
+
+            let callerName =
+            "Great Assistance User";
+
+
+            try {
+
+                const callerSnapshot =
+                await get(
+
+                    ref(
+                        database,
+                        "users/" +
+                        call.caller
+                    )
+
+                );
+
+
+                const caller =
+                callerSnapshot.val();
+
+
+                if (
+                    caller &&
+                    caller.name
+                ) {
+
+                    callerName =
+                    caller.name;
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(error);
+
+            }
+
+
+            document.getElementById(
+                "incomingName"
+            ).textContent =
+            callerName +
+            " is calling you";
+
+
+            document.getElementById(
+                "incomingAvatar"
+            ).textContent =
+            callerName
+            .charAt(0)
+            .toUpperCase();
+
+
+            incomingScreen.style.display =
+            "flex";
+
+
+            status.textContent =
+            "Incoming video call";
+
+
+            console.log(
+                "INCOMING CALL:",
+                currentCallId
+            );
+
+        }
+
+    );
+
+}
+
+
+/* ==============================
+   ANSWER
+============================== */
+
+document.getElementById(
+    "answerButton"
+).onclick =
+async () => {
+
+    if (
+        !currentCall ||
+        !currentCallId
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        incomingScreen.style.display =
+        "none";
+
+
+        status.textContent =
+        "Answering call...";
+
+
+        peerConnection =
+        createPeerConnection();
+
+
+        localStream
+        .getTracks()
+        .forEach(
+            track => {
+
+                peerConnection.addTrack(
+                    track,
+                    localStream
+                );
+
+            }
+        );
+
+
+        peerConnection.onicecandidate =
+        async event => {
+
+            if (!event.candidate) {
+
+                return;
+
+            }
+
+
+            await set(
+
+                push(
+
+                    ref(
+
+                        database,
+
+                        "calls/" +
+                        currentCallId +
+                        "/calleeCandidates"
+
+                    )
+
+                ),
+
+                event.candidate.toJSON()
+
+            );
+
+        };
+
+
+        await peerConnection.setRemoteDescription(
+
+            new RTCSessionDescription(
+                currentCall.offer
+            )
+
+        );
+
+
+        const answer =
+        await peerConnection.createAnswer();
+
+
+        await peerConnection.setLocalDescription(
+            answer
+        );
+
+
+        await set(
+
+            ref(
+                database,
+                "calls/" +
+                currentCallId +
+                "/answer"
+            ),
+
+            {
+
+                type:
+                answer.type,
+
+                sdp:
+                answer.sdp
+
+            }
+
+        );
+
+
+        await set(
+
+            ref(
+                database,
+                "calls/" +
+                currentCallId +
+                "/status"
+            ),
+
+            "accepted"
+
+        );
+
+
+        status.textContent =
+        "Connecting...";
+
+
+        listenForRemoteCandidates(
+            "callerCandidates"
+        );
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Answer error:",
+            error
+        );
+
+        status.textContent =
+        "Could not answer call.";
+
+    }
+
+};
+
+
+/* ==============================
+   CALL ANSWER LISTENER
+============================== */
+
+function listenForCallAnswer() {
+
+    if (!currentCallId) {
+
+        return;
+
+    }
+
+
+    onValue(
+
+        ref(
+            database,
+            "calls/" +
+            currentCallId
+        ),
+
+        async snapshot => {
+
+            const call =
+            snapshot.val();
+
+
+            if (!call) {
+
+                return;
+
+            }
+
+
+            if (
+                call.answer &&
+                peerConnection
+            ) {
+
+                if (
+                    !peerConnection
+                    .currentRemoteDescription
+                ) {
+
+                    await peerConnection
+                    .setRemoteDescription(
+
+                        new RTCSessionDescription(
+                            call.answer
+                        )
+
+                    );
+
+                    status.textContent =
+                    "Connecting...";
+
+                }
+
+            }
+
+
+            if (
+                call.status ===
+                "declined"
+            ) {
+
+                status.textContent =
+                "Call declined.";
+
+            }
+
+        }
+
+    );
+
+}
+
+
+/* ==============================
+   REMOTE ICE
+============================== */
+
+function listenForRemoteCandidates(
+    folder
+) {
+
+    if (!currentCallId) {
+
+        return;
+
+    }
+
+
+    const candidatesRef =
+    ref(
+
+        database,
+
+        "calls/" +
+        currentCallId +
+        "/" +
+        folder
+
+    );
+
+
+    onChildAdded(
+
+        candidatesRef,
+
+        async snapshot => {
+
+            if (
+                !peerConnection
+            ) {
+
+                return;
+
+            }
+
+
+            const candidate =
+            snapshot.val();
+
+
+            try {
+
+                await peerConnection
+                .addIceCandidate(
+
+                    new RTCIceCandidate(
+                        candidate
+                    )
+
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "ICE candidate error:",
+                    error
+                );
+
+            }
+
+        }
+
+    );
+
+}
+
+
+/* ==============================
+   DECLINE
+============================== */
+
+document.getElementById(
+    "declineButton"
+).onclick =
+async () => {
+
+    if (currentCallId) {
+
+        await set(
+
+            ref(
+
+                database,
+
+                "calls/" +
+                currentCallId +
+                "/status"
+
+            ),
+
+            "declined"
+
+        );
+
+    }
+
+
+    incomingScreen.style.display =
+    "none";
+
+
+    status.textContent =
+    "Call declined.";
+
+};
+
+
+/* ==============================
+   MUTE
+============================== */
+
+document.getElementById(
+    "muteButton"
+).onclick =
+() => {
+
+    if (!localStream) {
+
+        return;
+
+    }
+
+
+    const track =
+    localStream
+    .getAudioTracks()[0];
+
+
+    if (!track) {
+
+        return;
+
+    }
+
+
+    track.enabled =
+    !track.enabled;
+
+
+    document.getElementById(
+        "muteButton"
+    ).textContent =
+    track.enabled
+    ? "🎤"
+    : "🔇";
+
+};
+
+
+/* ==============================
+   CAMERA
+============================== */
+
+document.getElementById(
+    "cameraButton"
+).onclick =
+() => {
+
+    if (!localStream) {
+
+        return;
+
+    }
+
+
+    const track =
+    localStream
+    .getVideoTracks()[0];
+
+
+    if (!track) {
+
+        return;
+
+    }
+
+
+    track.enabled =
+    !track.enabled;
+
+
+    document.getElementById(
+        "cameraButton"
+    ).textContent =
+    track.enabled
+    ? "📷"
+    : "🚫";
+
+};
+
+
+/* ==============================
+   END CALL
+============================== */
+
+document.getElementById(
+    "endButton"
+).onclick =
+async () => {
+
+    await endCall();
+
+};
+
+
+async function endCall() {
+
+    try {
+
+        if (currentCallId) {
+
+            await remove(
+
+                ref(
+                    database,
+                    "calls/" +
+                    currentCallId
+                )
+
+            );
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+
+    if (peerConnection) {
+
+        peerConnection.close();
+
+        peerConnection = null;
+
+    }
+
+
+    if (localStream) {
+
+        localStream
+        .getTracks()
+        .forEach(
+            track => track.stop()
+        );
+
+    }
+
+
+    remoteVideo.srcObject =
+    null;
+
+    localVideo.srcObject =
+    null;
+
+
+    status.textContent =
+    "Call ended.";
+
+}
+
+
+/* ==============================
+   RETRY CAMERA
+============================== */
+
+document.getElementById(
+    "retryButton"
+).onclick =
+async () => {
+
+    errorScreen.style.display =
+    "none";
+
+    await startCamera();
+
+};
+
+</script>
+
+</body>
+</html>
